@@ -1,6 +1,21 @@
 import FWCore.ParameterSet.Config as cms
 process = cms.Process("MUMU")
-process.maxEvents = cms.untracked.PSet(  input = cms.untracked.int32(50000) )
+process.load("Configuration.StandardSequences.MagneticField_cff")
+process.load("Configuration.StandardSequences.Reconstruction_cff")
+process.load('Configuration.Geometry.GeometryRecoDB_cff')
+process.load('Configuration.StandardSequences.Services_cff')
+process.load('SimGeneral.HepPDTESSource.pythiapdt_cfi')
+process.load('FWCore.MessageService.MessageLogger_cfi')
+process.load('Configuration.EventContent.EventContent_cff')
+process.load('SimGeneral.MixingModule.mixNoPU_cfi') 
+process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
+process.load("FWCore.MessageLogger.MessageLogger_cfi")
+
+from PhysicsTools.PatAlgos.tools.coreTools import *
+process.load("PhysicsTools.PatAlgos.patSequences_cff")
+from PhysicsTools.PatAlgos.tools.pfTools import *
+
+process.maxEvents = cms.untracked.PSet(  input = cms.untracked.int32(5000) )
 process.source = cms.Source("PoolSource",
                             duplicateCheckMode = cms.untracked.string('noDuplicateCheck'),
                             skipEvents = cms.untracked.uint32(0),
@@ -15,8 +30,7 @@ process.source = cms.Source("PoolSource",
 #process.load("Configuration.StandardSequences.FrontierConditions_GlobalTag_condDBv2_cff")
 #from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag
 from Configuration.AlCa.GlobalTag import GlobalTag
-process.GlobalTag = GlobalTag(process.GlobalTag, 'run2_data', '')
-
+process.GlobalTag = GlobalTag(process.GlobalTag, '130X_dataRun3_HLT_v2','')
 """
 process.MessageLogger = cms.Service(
                                     "MessageLogger",
@@ -29,13 +43,6 @@ process.load("FWCore.MessageLogger.MessageLogger_cfi")
 process.MessageLogger.cerr.FwkReport.reportEvery = 1000
 """
 
-process.load("Configuration.StandardSequences.MagneticField_cff")
-process.load("Configuration.StandardSequences.Reconstruction_cff")
-process.load('Configuration.Geometry.GeometryRecoDB_cff')
-
-from PhysicsTools.PatAlgos.tools.coreTools import *
-process.load("PhysicsTools.PatAlgos.patSequences_cff")
-from PhysicsTools.PatAlgos.tools.pfTools import *
 
 #--PatOverlap, mu/ele--#
 process.load("PhysicsTools.PatAlgos.cleaningLayer1.genericTrackCleaner_cfi")
@@ -66,26 +73,27 @@ process.electronMatch.checkCharge = cms.bool(True)
 process.electronMatch.resolveAmbiguities = cms.bool(True)
 process.electronMatch.resolveByMatchQuality = cms.bool(True)
 
-
+"""
 #--PATTracks--Marcin had some question on this part, Now I cant remember--#
 process.allKTracks = cms.EDProducer("ConcreteChargedCandidateProducer",
-                                    src = cms.InputTag("generalTracks"),
+                                    src = cms.InputTag("packedPFCandidates"),
                                     particleType = cms.string('K+')
                                     )
 process.allPiTracks = cms.EDProducer("ConcreteChargedCandidateProducer",
-                                    src = cms.InputTag("generalTracks"),
+                                    src = cms.InputTag("packedPFCandidates"),
                                     particleType = cms.string('pi+')
                                     )
 process.kTracks = cms.EDFilter("CandViewRefSelector",
-                               src = cms.InputTag("allKTracks"),
+                               src = cms.InputTag("packedPFCandidates"),
                                cut = cms.string("pt > 0.3 & abs(eta) < 2.5")
                                #cut = cms.string("pt > 0.59 & abs(eta) < 2.5")
                                )
 process.piTracks = cms.EDFilter("CandViewRefSelector",
-                               src = cms.InputTag("allPiTracks"),
+                               src = cms.InputTag("packedPFCandidates"),
                                cut = cms.string("pt > 0.3 & abs(eta) < 2.5")
                                #cut = cms.string("pt > 0.59 & abs(eta) < 2.5")
                                )
+"""
 #-- ANALYZER TAGS AND PARAMETERS --#
 process.bVertexAnalysis = cms.EDAnalyzer("JpsiTrkTrk",
                                           isMCstudy                     = cms.bool(False),
@@ -148,7 +156,7 @@ process.muonMatchHLTCtfTrack.maxDeltaR = 0.1
 process.muonMatchHLTCtfTrack.maxDPtRel = 10.0
 process.muonMatchHLTTrackMu.maxDeltaR = 0.1
 process.muonMatchHLTTrackMu.maxDPtRel = 10.0
-
+"""
 ### ==== Apply some final selection (none by default) ====
 process.patMuons = cms.EDFilter("PATMuonSelector",
     src = cms.InputTag("patMuonsWithTrigger"),
@@ -169,15 +177,16 @@ process.primaryVertexFilter = cms.EDFilter("GoodVertexFilter",
                                            maxAbsZ = cms.double(15),
                                            maxd0 = cms.double(2)
                                            )
-
+"""
 # can I do a replace of patMuons with the sequence that includes the trigger matching?
-process.patDefaultSequence.replace(process.patMuons,process.patMuonsWithoutTrigger * process.patTriggerMatching * process.patMuons)
+#process.patDefaultSequence.replace(process.patMuons,process.patMuonsWithoutTrigger * process.patTriggerMatching * process.patMuons)
 #process.vertex = cms.Path(process.inclusiveVertexing * process.inclusiveMergedVertices * process.selectedVertices * process.bcandidates)
 #process.pat = cms.Path( process.patDefaultSequence )
-process.pat = cms.Path(process.patDefaultSequence)
+#process.pat = cms.Path(process.patDefaultSequence)
 #print(process.pat)
 
-process.ntup = cms.Path(process.allPiTracks * process.allKTracks * process.kTracks * process.piTracks * process.bVertexAnalysis )
-process.filter = cms.Path(process.noScraping)
-process.schedule = cms.Schedule(process.filter, process.pat, process.ntup)
+#process.ntup = cms.Path(process.allPiTracks * process.allKTracks * process.kTracks * process.piTracks * process.bVertexAnalysis )
+process.ntup = cms.Path(process.bVertexAnalysis )
+#process.filter = cms.Path(process.noScraping)
+process.schedule = cms.Schedule(process.ntup)
 

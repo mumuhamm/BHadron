@@ -56,6 +56,36 @@ class JpsiTrkTrkRootTree{
   double PVerrx_ ;
   double PVerry_ ;
   double PVerrz_ ;
+  
+  
+  int    Mu1SoftID_;
+  int    Mu2SoftID_; 
+  int    triggerbit_HLTDimuon4JpsiDisplaced_;
+  int    triggerbit_HLTDimuon4JpsiNoVertexing_;
+  int    triggerbit_HLTDimuon4JpsiTrkTrkDisplaced_;
+  int    triggerbit_HLTDimuon4JpsiTrkBc_;
+  int    MuonMultiplicity_ ;
+  int    iPassedCutIdentBd_;
+  int    iPassedCutIdent_;
+  int    ihaveajpsi_;
+  int    JpsiNumberOfCandidates_;
+  double JpsiM_alone_;
+  double JpsiPhi_alone_;
+  double JpsiEta_alone_;
+  double JpsiPt_alone_;
+  double Mu1Pt_beffit_;
+  double Mu1Pz_beffit_;
+  double Mu1Eta_beffit_;
+  double Mu1Phi_beffit_;
+  double Mu2Pt_beffit_;
+  double Mu2Pz_beffit_;
+  double Mu2Eta_beffit_;
+  double Mu2Phi_beffit_;
+  int JpsiMuMuDCA_beffit_;
+  double JpsiCosDeltaAlpha_;
+  double JpsiLxySigma_;
+  double JpsiLxy_;
+  double JpsiLxyOverPt_;
 
 };
 #endif

@@ -44,6 +44,31 @@ void JpsiTrkTrkRootTree::createTree(const std::string filename)
   bTree_->Branch(  "PVerrx"			  , &PVerrx_,                           "PVerrx/D");
   bTree_->Branch(  "PVerry"			  , &PVerry_,                           "PVerry/D");
   bTree_->Branch(  "PVerrz"			  , &PVerrz_,                           "PVerrz/D");
+  bTree_->Branch("triggerbit_HLTDimuon4JpsiDisplaced", &triggerbit_HLTDimuon4JpsiDisplaced_,"triggerbit_HLTDimuon4JpsiDisplaced_/I"); 
+  bTree_->Branch("triggerbit_HLTDimuon4JpsiNoVertexing",&triggerbit_HLTDimuon4JpsiNoVertexing_,"triggerbit_HLTDimuon4JpsiNoVertexing_/I");
+  bTree_->Branch("triggerbit_HLTDimuon4JpsiTrkTrkDisplaced",&triggerbit_HLTDimuon4JpsiTrkTrkDisplaced_,"triggerbit_HLTDimuon4JpsiTrkTrkDisplaced_/I");
+  bTree_->Branch("triggerbit_HLTDimuon4JpsiTrkBc",&triggerbit_HLTDimuon4JpsiTrkBc_,"triggerbit_HLTDimuon4JpsiTrkBc_/I");
+  bTree_->Branch("MuonMultiplicity", &MuonMultiplicity_, "MuonMultiplicity/I");
+  bTree_->Branch(  "iPassedCutIdent"		  , &iPassedCutIdent_,                  "iPassedCutIdent/I");
+  bTree_->Branch(  "iPassedCutIdentBd"		  , &iPassedCutIdentBd_,                "iPassedCutIdentBd/I");  
+  bTree_->Branch(  "ihaveajpsi"             , &ihaveajpsi_,                "ihaveajpsi/I");
+  bTree_->Branch(  "JpsiNumberOfCandidates"          , &JpsiNumberOfCandidates_,            "JpsiNumberOfCandidates/I");
+  bTree_->Branch(  "JpsiM_alone"			  , &JpsiM_alone_,                      "JpsiM_alone/D");
+  bTree_->Branch(  "JpsiPhi_alone"		  , &JpsiPhi_alone_,                    "JpsiPhi_alone/D");
+  bTree_->Branch(  "JpsiEta_alone"		  , &JpsiEta_alone_,                    "JpsiEta_alone/D");
+  bTree_->Branch(  "JpsiPt_alone"		  , &JpsiPt_alone_,                     "JpsiPt_alone/D");
+  bTree_->Branch(  "Mu1Pt_beffit"			  , &Mu1Pt_beffit_,                       "Mu1Pt_beffit/D");
+  bTree_->Branch(  "Mu1Pz_beffit"			  , &Mu1Pz_beffit_,                       "Mu1Pz_beffit/D");
+  bTree_->Branch(  "Mu1Eta_beffit"			  , &Mu1Eta_beffit_,                      "Mu1Eta_beffit/D");
+  bTree_->Branch(  "Mu1Phi_beffit"			  , &Mu1Phi_beffit_,                      "Mu1Phi_beffit/D");
+  bTree_->Branch(  "Mu2Pt_beffit"			  , &Mu2Pt_beffit_,                       "Mu2Pt_beffit/D");
+  bTree_->Branch(  "Mu2Pz_beffit"			  , &Mu2Pz_beffit_,                       "Mu2Pz_beffit/D");
+  bTree_->Branch(  "Mu2Eta_beffit"			  , &Mu2Eta_beffit_,                      "Mu2Eta_beffit/D");
+  bTree_->Branch(  "Mu2Phi_beffit"			  , &Mu2Phi_beffit_,                      "Mu2Phi_beffit/D");
+  bTree_->Branch(  "JpsiCosDeltaAlpha"         , &JpsiCosDeltaAlpha_, "JpsiCosDeltaAlpha/D");
+  bTree_->Branch(  "JpsiLxySigma"         , &JpsiLxySigma_, "JpsiLxySigma/D");
+  bTree_->Branch(  "JpsiLxy"         , &JpsiLxy_, "JpsiLxy/D");
+  bTree_->Branch(  "JpsiLxyOverPt"         , &JpsiLxyOverPt_, "JpsiLxyOverPt/D");
   
 }
 
@@ -78,7 +103,32 @@ void JpsiTrkTrkRootTree::resetEntries()
         PVerrx_ = -9999999;
         PVerry_ = -9999999;
         PVerrz_ = -9999999;
+	triggerbit_HLTDimuon4JpsiDisplaced_ = -9999999;
+	triggerbit_HLTDimuon4JpsiNoVertexing_ = -9999999;
+	triggerbit_HLTDimuon4JpsiTrkTrkDisplaced_ = -9999999;
+	triggerbit_HLTDimuon4JpsiTrkBc_ = -9999999;
+        MuonMultiplicity_ = -9999999;
+	iPassedCutIdent_ = -9999999;
+        iPassedCutIdentBd_ = -9999999;
 	Mu1Charge_ = -999999;
+        ihaveajpsi_=  -9999999;
+	JpsiNumberOfCandidates_ = 0;
+	JpsiM_alone_ = -9999999;
+        JpsiPhi_alone_ = -9999999;
+        JpsiEta_alone_ = -9999999;
+        JpsiPt_alone_ = -9999999;
+        Mu1Pt_beffit_ = -9999999;
+        Mu1Pz_beffit_ = -9999999;
+        Mu1Eta_beffit_ = -9999999;
+        Mu1Phi_beffit_ = -9999999;
+        Mu2Pt_beffit_ = -9999999;
+        Mu2Pz_beffit_ = -9999999;
+        Mu2Eta_beffit_ = -9999999;
+        Mu2Phi_beffit_ = -9999999;
+	JpsiCosDeltaAlpha_ = -9999999;
+        JpsiLxySigma_ = -9999999;
+        JpsiLxy_ = -9999999;
+	JpsiLxyOverPt_= -9999999;
 
 }
 void JpsiTrkTrkRootTree::getDeDx(const double f1, const double f2, const int f3)
@@ -137,7 +187,7 @@ void JpsiTrkTrkRootTree::setBranchAddresses(){
   bTree_->SetBranchAddress(  "eventNumber"             , &eventNumber_  );
   bTree_->SetBranchAddress(  "lumiSection"             , &lumiSection_  );
   bTree_->SetBranchAddress(  "PUinteraction"             , &PUinteraction_  );
-   bTree_->SetBranchAddress(  "isPV"                               , &isPV_  );
+  bTree_->SetBranchAddress(  "isPV"                               , &isPV_  );
   bTree_->SetBranchAddress(  "isBS"                               , &isBS_  );
   bTree_->SetBranchAddress(  "NVertices"             , &NVertices_  ); 
   bTree_->SetBranchAddress(  "BSx"				  , &BSx_  );
@@ -146,12 +196,37 @@ void JpsiTrkTrkRootTree::setBranchAddresses(){
   bTree_->SetBranchAddress(  "BSdx"                                , &BSdx_  );
   bTree_->SetBranchAddress(  "BSdy"                                , &BSdy_  );
   bTree_->SetBranchAddress(  "BSdz"                                , &BSdz_  );
-  bTree_->SetBranchAddress(  "PVx"				  , &PVx_  );
-  bTree_->SetBranchAddress(  "PVy"				  , &PVy_  );
-  bTree_->SetBranchAddress(  "PVz"				  , &PVz_  );
-  bTree_->SetBranchAddress(  "PVerrx"			  , &PVerrx_  );
-  bTree_->SetBranchAddress(  "PVerry"			  , &PVerry_  );
-  bTree_->SetBranchAddress(  "PVerrz"			  , &PVerrz_  );
+  bTree_->SetBranchAddress("PVx"				  , &PVx_  );
+  bTree_->SetBranchAddress("PVy"				  , &PVy_  );
+  bTree_->SetBranchAddress("PVz"				  , &PVz_  );
+  bTree_->SetBranchAddress("PVerrx"			  , &PVerrx_  );
+  bTree_->SetBranchAddress("PVerry"			  , &PVerry_  );
+  bTree_->SetBranchAddress("PVerrz"			  , &PVerrz_  );
+  bTree_->SetBranchAddress("triggerbit_HLTDimuon4JpsiDisplaced",&triggerbit_HLTDimuon4JpsiDisplaced_);
+  bTree_->SetBranchAddress("triggerbit_HLTDimuon4JpsiNoVertexing",&triggerbit_HLTDimuon4JpsiNoVertexing_);
+  bTree_->SetBranchAddress("triggerbit_HLTDimuon4JpsiTrkTrkDisplaced_",&triggerbit_HLTDimuon4JpsiTrkTrkDisplaced_);
+  bTree_->SetBranchAddress("triggerbit_HLTDimuon4JpsiTrkBc_",&triggerbit_HLTDimuon4JpsiTrkBc_);
+  bTree_->SetBranchAddress("iPassedCutIdent"		  , &iPassedCutIdent_  );
+  bTree_->SetBranchAddress("iPassedCutIdentBd"		  , &iPassedCutIdentBd_  );
+  bTree_->SetBranchAddress("ihaveajpsi"             , &ihaveajpsi_);
+  bTree_->SetBranchAddress(  "JpsiNumberOfCandidates"        , &JpsiNumberOfCandidates_);
+  bTree_->SetBranchAddress(  "JpsiM_alone"			  , &JpsiM_alone_  );
+  bTree_->SetBranchAddress(  "JpsiPhi_alone"		  , &JpsiPhi_alone_  );
+  bTree_->SetBranchAddress(  "JpsiEta_alone"		  , &JpsiEta_alone_  );
+  bTree_->SetBranchAddress(  "JpsiPt_alone"		  , &JpsiPt_alone_  );
+  bTree_->SetBranchAddress(  "Mu1Pt_beffit"			  , &Mu1Pt_beffit_  );
+  bTree_->SetBranchAddress(  "Mu1Pz_beffit"			  , &Mu1Pz_beffit_  );
+  bTree_->SetBranchAddress(  "Mu1Eta_beffit"			  , &Mu1Eta_beffit_  );
+  bTree_->SetBranchAddress(  "Mu1Phi_beffit"			  , &Mu1Phi_beffit_  );
+  bTree_->SetBranchAddress(  "Mu2Pt_beffit"			  , &Mu2Pt_beffit_  );
+  bTree_->SetBranchAddress(  "Mu2Pz_beffit"			  , &Mu2Pz_beffit_  );
+  bTree_->SetBranchAddress(  "Mu2Eta_beffit"			  , &Mu2Eta_beffit_  );
+  bTree_->SetBranchAddress(  "Mu2Phi_beffit"			  , &Mu2Phi_beffit_  );
+  bTree_->SetBranchAddress(  "JpsiCosDeltaAlpha"         , &JpsiCosDeltaAlpha_);
+  bTree_->SetBranchAddress(  "JpsiLxySigma"         , &JpsiLxySigma_);
+  bTree_->SetBranchAddress(  "JpsiLxy"         , &JpsiLxy_);
+  bTree_->SetBranchAddress(  "JpsiLxyOverPt"         , &JpsiLxyOverPt_);
+  bTree_->SetBranchAddress("MuonMultiplicity",&MuonMultiplicity_);
 }
 
 

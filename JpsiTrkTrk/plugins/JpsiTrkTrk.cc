@@ -66,7 +66,7 @@
 #include "SimDataFormats/GeneratorProducts/interface/GenRunInfoProduct.h"
 #include "DataFormats/Candidate/interface/CandMatchMap.h"
 #include "DataFormats/Candidate/interface/OverlapChecker.h"
-//#include "PhysicsTools/CandUtils/interface/AddFourMomenta.h"
+#include "CommonTools/CandUtils/interface/AddFourMomenta.h"
 #include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "DataFormats/HLTReco/interface/TriggerEvent.h"
 #include "DataFormats/HLTReco/interface/TriggerObject.h"
@@ -132,6 +132,7 @@
 #include "DataFormats/TrackReco/interface/HitPattern.h"
 #include "DataFormats/PatCandidates/interface/IsolatedTrack.h"
 #include "DataFormats/Math/interface/LorentzVector.h"
+#include "DataFormats/PatCandidates/interface/CompositeCandidate.h"
 using namespace reco;
 using namespace edm;
 using namespace std;
@@ -367,10 +368,180 @@ void JpsiTrkTrk::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
         //cout<<iEvent.id().run()<<"\n";
         bRootTree_->eventNumber_ = (unsigned int)iEvent.id().event();
         bRootTree_->lumiSection_ = iEvent.luminosityBlock();
-  
+        
+	edm::Handle<edm::TriggerResults> hltresults;
+        iEvent.getByToken(triggerresultsTok, hltresults);
+	//std::cout<<"hlt size:  "<<hltresults->size()<<"\n";
   
 
+	const  edm::TriggerNames & triggerNames_ = iEvent.triggerNames(*hltresults);
+        int ntrigs = hltresults->size();
+	for (int itrig = 0; itrig != ntrigs; ++itrig)
+        {
+                                                  TString trigName = triggerNames_.triggerName(itrig);
+                                                  //std::cout<<"triggernames:"<<itrig<<"::"<<trigName<<"\n";
 
+                if (trigName=="triggerbit_HLTDimuon4JpsiDisplaced_")      bRootTree_->triggerbit_HLTDimuon4JpsiDisplaced_       = hltresults->accept(itrig);
+                if (trigName=="triggerbit_HLTDimuon4JpsiNoVertexing_")    bRootTree_->triggerbit_HLTDimuon4JpsiNoVertexing_     = hltresults->accept(itrig);
+                if (trigName=="triggerbit_HLTDimuon4JpsiTrkTrkDisplaced_")bRootTree_->triggerbit_HLTDimuon4JpsiTrkTrkDisplaced_ = hltresults->accept(itrig);
+		if (trigName=="triggerbit_HLTDimuon4JpsiTrkBc_")          bRootTree_->triggerbit_HLTDimuon4JpsiTrkBc_ = hltresults->accept(itrig);
+
+                string str = (string) trigName  ;
+
+                   /*  if (str.compare(0,18,"HLT_DoubleMu4_3_Jpsi_Displaced_v12") == 0)
+                     {
+                        cout << "trigger found! " << str << endl;
+                        cout <<"dimuon4_jpsidis  " << bsRootTree_->triggerbit_HLTmu4TkDis_  << endl;
+                        cout <<"dimuon4_jpsitktkdis  " << bsRootTree_->triggerbit_HLTmu4TkTkDis_ << endl;
+                     }*/
+
+         }//Trigger loop ends
+ 
+	 edm::Handle< View<pat::Muon> > allmuons;
+         iEvent.getByToken(MuonTagTok, allmuons);
+         //if(allmuons->size()>0)std::cout<<"muonmultiplicity"<<allmuons->size()<<"\n";
+         bRootTree_->MuonMultiplicity_ = allmuons->size();
+         //==================================================================================================================Muon LOOP
+//-------------------------------------------------------First Muon
+      for(size_t i=0; i < allmuons->size(); ++i)
+          {
+                    const pat::Muon & mu1 = (*allmuons)[i];
+                    if (mu1.innerTrack().isNull()){continue;}
+                    //cout<<"mu1pt: "<<mu1.pt()<<"\n";
+                    if(verbose_ == true)
+                        {
+                                std::cout<<"Got one muon "<<mu1.pt()<<std::endl;
+                        }
+
+//------------------------------------------------------Loop over 2nd muon
+                   for (size_t j=i+1; j < allmuons->size(); ++j)
+                        {
+                              const pat::Muon & mu2 = (*allmuons)[j];
+                              if (mu2.innerTrack().isNull()){continue;}	   
+                              //  cout<<"mu2pt: "<<mu2.pt()<<"\n";
+                              if(verbose_ == true)
+                                  {
+                                         std::cout<<"Got the second muon "<<mu2.pt()<<std::endl;
+                                   }
+               
+           	   bRootTree_->Mu1SoftID_ = mu1.passed(reco::Muon::SoftCutBasedId);
+                   bRootTree_->Mu2SoftID_ = mu2.passed(reco::Muon::SoftCutBasedId);
+                   if(!mu1.isGlobalMuon() && !mu1.isTrackerMuon()) continue; // skip if mu1 is not GLB or TRK (PASS IF LooseMuId)
+                   if(!mu2.isGlobalMuon() && !mu2.isTrackerMuon()) continue; // skip if mu2 is not GLB or TRK (PASS IF LooseMuId)
+                   if(verbose_==true) {
+                                          std::cout << "******mu1.isGlobalMuon() == "<<mu1.isGlobalMuon() << "\n";
+                                          std::cout << "      mu1.isTrackerMuon()== "<<mu1.isTrackerMuon()<< "\n";
+                                          std::cout << "      mu2.isGlobalMuon() == "<<mu2.isGlobalMuon() << "\n";
+                                          std::cout << "      mu2.isTrackerMuon()== "<<mu2.isTrackerMuon()<< "\n";
+                                       }
+		   bRootTree_->ihaveajpsi_=1;
+		    if(mu1.charge()==mu2.charge()) continue; // Skip iif mu1 e mu2 have the same charge
+                          if(verbose_==true) {
+                                                  std::cout<<"******MUONS HAVE OPPOSITE CHARGE: mu1.charge() = " <<mu1.charge()<<" , mu2.charge() = "<<mu2.charge()<<std::endl;
+                                             }
+
+                                                if(bRootTree_->iPassedCutIdent_   < 1 )   bRootTree_->iPassedCutIdent_ = 1 ;
+                                                if(bRootTree_->iPassedCutIdentBd_   < 1 ) bRootTree_->iPassedCutIdentBd_ = 1 ;
+
+                    pat::CompositeCandidate Jpsi;
+                    Jpsi.addDaughter(mu1);
+                    Jpsi.addDaughter(mu2);
+                    AddFourMomenta addP4;
+                    addP4.set(Jpsi);
+		    if(verbose_==true)
+                                          {
+                                                 std::cout<<"******Di-Muon Mass= " <<Jpsi.mass()<<std::endl;
+                                           }
+                    if ( abs(Jpsi.mass() - nominalJpsiMass ) > JpsiMassWindowBeforeFit_ ) continue; // skip if mu1-mu2 combination mass is far from JPsi
+                    if ( Jpsi.pt() < JpsiPtCut_) continue;                                          // skip if mu1-mu2 combination pt is less than JPsi Pt cut
+
+                    //Jpsi window validity
+
+                   if(bRootTree_->iPassedCutIdent_   < 2 )   bRootTree_->iPassedCutIdent_   = 2 ;
+                   if(bRootTree_->iPassedCutIdentBd_   < 2 ) bRootTree_->iPassedCutIdentBd_ = 2 ;
+
+                  edm::ESHandle<TransientTrackBuilder> theB;
+                  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",theB);
+                  TrackRef trkMu1Ref = mu1.get<TrackRef>();
+                  TrackRef trkMu2Ref = mu2.get<TrackRef>();
+                  TrackRef muonTrkP = mu1.track();
+                  TrackRef muonTrkM = mu2.track();
+                  vector<TransientTrack> trk_all;
+                  TransientTrack mu1TT=(*theB).build(&trkMu1Ref);
+                  TransientTrack mu2TT=(*theB).build(&trkMu2Ref);
+                  trk_all.push_back(mu1TT);
+                  trk_all.push_back(mu2TT);
+                  KalmanVertexFitter kvf(true);
+                  TransientVertex tv = kvf.vertex(trk_all);
+
+    
+                  if(verbose_==true) 
+                  {
+                              std::cout<<"****** MUONS HAVE VALID VERTEX FIT"<< std::endl;
+                  }
+
+
+
+                 // vertex validity
+                 if(bRootTree_->iPassedCutIdent_   < 3 )   bRootTree_->iPassedCutIdent_   = 3 ;     
+                 if(bRootTree_->iPassedCutIdentBd_   < 3 ) bRootTree_->iPassedCutIdentBd_ = 3 ;
+		 int isCowboy=0;
+                 if (mu1.charge()==1) {
+                 float mupPhi = atan(mu1.py()/mu1.px());
+                 if ( mu1.px() < 0 && mu1.py() < 0 ) mupPhi -= TMath::Pi();
+                 if ( mu1.px() < 0 && mu1.py() > 0 ) mupPhi += TMath::Pi();
+                 float mumPhi = atan(mu2.py()/mu2.px());
+                 if ( mu2.px() < 0 && mu2.py() < 0 ) mumPhi -= TMath::Pi();
+                 if ( mu2.px() < 0 && mu2.py() > 0 ) mumPhi += TMath::Pi();
+                 //std::cout<<"mumphi"<<mumPhi<<"\n";
+                 if ( (mupPhi - mumPhi)>0 ) isCowboy=1; }
+                 else {
+                   float mupPhi = atan(mu2.py()/mu2.px());
+                   if ( mu2.px() < 0 && mu2.py() < 0 ) mupPhi -= TMath::Pi();
+                   if ( mu2.px() < 0 && mu2.py() > 0 ) mupPhi += TMath::Pi();
+                   float mumPhi = atan(mu1.py()/mu1.px());
+                   if ( mu1.px() < 0 && mu1.py() < 0 ) mumPhi -= TMath::Pi();
+                   if ( mu1.px() < 0 && mu1.py() > 0 ) mumPhi += TMath::Pi();
+                   if ( (mupPhi - mumPhi)>0 ) isCowboy=1;
+                  }
+                 //==========================================================================ceate vertex for mu1-mu2 combination
+                 Vertex vertex = tv;
+                 //calculate variable in the cloasest way to trigger
+                 double  vtxProb_Jpsi = TMath::Prob(vertex.chi2(),(int)vertex.ndof());
+                 math::XYZVector      pperp(mu1.px() + mu2.px(), mu1.py() + mu2.py(), 0.);
+                 reco::Vertex::Point  vpoint=vertex.position();
+                 //std::cout<<"vpoint"<<vpoint<<"\n";
+
+		 GlobalPoint secondaryVertex (vpoint.x(), vpoint.y(), vpoint.z());
+                 GlobalPoint displacementFromBeamspot( -1*((BSx -  secondaryVertex.x()) +  (secondaryVertex.z() - BSz) * BSdxdz),-1*((BSy - secondaryVertex.y())+  (secondaryVertex.z() - BSz) * BSdydz), 0);
+                reco::Vertex::Point vperp(displacementFromBeamspot.x(),displacementFromBeamspot.y(),0.);
+                double CosAlpha = vperp.Dot(pperp)/(vperp.R()*pperp.R());
+                //std::cout<<"opening angle: "<<CosAlpha<<"\n";
+                double MuonsDCA=999;
+                 TrajectoryStateClosestToPoint mu1TS = mu1TT.impactPointTSCP();
+                 TrajectoryStateClosestToPoint mu2TS = mu2TT.impactPointTSCP();
+                 if (mu1TS.isValid() && mu2TS.isValid()) {
+
+                 ClosestApproachInRPhi cApp;
+                 cApp.calculate(mu1TS.theState(), mu2TS.theState());
+                 MuonsDCA=cApp.distance();
+               }
+                 double max_Dr1=fabs( (- (mu1.vx()-BSx) * mu1.py() + (mu1.vy()-BSy) * mu1.px() ) / mu1.pt() );
+                 double max_Dr2=fabs( (- (mu2.vx()-BSx) * mu2.py() + (mu2.vy()-BSy) * mu2.px() ) / mu2.pt() );
+                 // std::cout<<"maxDR1: "<<max_Dr1<<"\n";
+//========================================================================================================================muon overlaping remover
+                if ( muon::overlap(mu1,mu2,1,1,true) ) continue; /// Skip the mu-mu combination if the two muons overlap
+                reco::Vertex::Error verr = vertex.error();
+                //std::cout<<"Verror: "<<verr<<"\n";
+//==================================================================================================================Translate to global error
+                GlobalError err(verr.At(0,0), verr.At(1,0), verr.At(1,1), verr.At(2,0), verr.At(2,1), verr.At(2,2) );
+                float lxy = displacementFromBeamspot.perp();
+                float lxyerr = sqrt(err.rerr(displacementFromBeamspot));
+                std::cout<<"LXYerror: "<<lxyerr<<"\t"<<"LXY: "<<lxy<<"\n";
+                //Requires a filter match : bRootTree_->JpsiNumberOfCandidates_++;
+
+			}}	      
+              bRootTree_->fill();
 
 }
 
