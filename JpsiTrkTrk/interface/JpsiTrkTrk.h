@@ -19,6 +19,9 @@
 #include "RecoVertex/KinematicFitPrimitives/interface/RefCountedKinematicVertex.h"
 #include "RecoVertex/KinematicFitPrimitives/interface/RefCountedKinematicParticle.h"
 #include "RecoVertex/KinematicFitPrimitives/interface/RefCountedKinematicTree.h"
+#include "TrackingTools/TransientTrack/interface/TransientTrackBuilder.h"
+#include "TrackingTools/Records/interface/TransientTrackRecord.h"
+#include "TrackingTools/IPTools/interface/IPTools.h"
 #include "TrackingTools/TransientTrack/interface/TransientTrack.h"
 #include "SimDataFormats/GeneratorProducts/interface/HepMCProduct.h"
 #include "DataFormats/HepMCCandidate/interface/GenParticle.h"
@@ -135,13 +138,14 @@ private:
   edm::EDGetTokenT<edm::View<pat::PackedCandidate>> trackLabelK;
   edm::InputTag isotrack;
   edm::EDGetTokenT<edm::View<pat::IsolatedTrack>> isotrackTok;
+  edm::ESGetToken<TransientTrackBuilder, TransientTrackRecord> trackBuilderToken;
   bool StoreDeDxInfo_;
   bool verbose_;
   bool TestVerbose_;
 
 
 
-
+  
   const double nominalJpsiMass;
   const double nominalPhiMass;
   const double nominalElectronMass;
@@ -155,6 +159,7 @@ private:
   double JpsiMassWindowAfterFit_;
   double JpsiPtCut_;
   double KaonTrackPtCut_;
+  double PionTrackPtCut_;
   double BdKaonTrackPtCut_;
   double PhiMassWindowAfterFit_;
   double PhiMassWindowBeforeFit_;
@@ -189,7 +194,35 @@ private:
   unsigned int elecounter_;
   unsigned int muoncounter_;
   unsigned int jetcounter_;
-
+  
+  int    isCowboy       = 0;
+  double MuonsDCA       = 999;
+  int    VtxIndex       = -99;
+  double kaonmass       = 0.493677;
+  double pionmass       = 0.139570; 
+  double DeltaRKaonJpsi = 999;
+  double DeltaRPionJpsi = 999;
+  double KPiDCA         = 999;
+  double minVtxP = -99.; 
+//====================================================Beam Spot
+  double BSx         = -9999999.;
+  double BSy         = -9999999.;
+  double BSz         = -9999999.;
+  double BSdx        = -9999999.;
+  double BSdy        = -9999999.;
+  double BSdz        = -9999999.;
+  double BSdxdz      = -9999999.;
+  double BSdydz      = -9999999.;
+  double BSsigmaZ    = -9999999.;
+  double BSdsigmaZ   = -9999999.;
+//========================================================PV
+  double PVx         = -9999999.;
+  double PVy         = -9999999.;
+  double PVz         = -9999999.;
+  double PVerrx      = -9999999.;
+  double PVerry      = -9999999.;
+  double PVerrz      = -9999999.;
+  TLorentzVector kaontrack1, kaontrack2;
 };
 #endif 
 

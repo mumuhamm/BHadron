@@ -15,7 +15,7 @@ from PhysicsTools.PatAlgos.tools.coreTools import *
 process.load("PhysicsTools.PatAlgos.patSequences_cff")
 from PhysicsTools.PatAlgos.tools.pfTools import *
 
-process.maxEvents = cms.untracked.PSet(  input = cms.untracked.int32(5000) )
+process.maxEvents = cms.untracked.PSet(  input = cms.untracked.int32(-1) )
 process.source = cms.Source("PoolSource",
                             duplicateCheckMode = cms.untracked.string('noDuplicateCheck'),
                             skipEvents = cms.untracked.uint32(0),
@@ -113,6 +113,7 @@ process.bVertexAnalysis = cms.EDAnalyzer("JpsiTrkTrk",
                                           MuonPtCut                     = cms.double(4),
                                           JpsiPtCut                     = cms.double(7),
                                           KaonTrackPtCut                = cms.double(0.7),
+                                          PionTrackPtCut                = cms.double(0.5),
                                           BdKaonTrackPtCut              = cms.double(0.6),
                                           PhiMassWindowBeforeFit        = cms.double(0.03),
                                           PhiMassWindowAfterFit         = cms.double(0.02),

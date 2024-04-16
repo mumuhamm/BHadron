@@ -10,6 +10,7 @@
 
 #include <memory>
 #include "BHadron/JpsiTrkTrk/interface/JpsiTrkTrkRootTree.h"
+#include "BHadron/JpsiTrkTrk/interface/KinematicFitInterface.h"
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "BHadron/JpsiTrkTrk/interface/JpsiTrkTrk.h"
@@ -174,7 +175,7 @@ JpsiTrkTrk::JpsiTrkTrk(const edm::ParameterSet& iConfig):
         trackLabelK                       = consumes<edm::View<pat::PackedCandidate>>(track);
         isotrack                          = iConfig.getParameter<edm::InputTag>("isotrack");
         isotrackTok                       = consumes<edm::View<pat::IsolatedTrack>>(isotrack);
-
+        trackBuilderToken                 = esConsumes(edm::ESInputTag("", "TransientTrackBuilder"));
 //=============================================================================================
   StoreDeDxInfo_ = iConfig.getParameter<bool>("StoreDeDxInfo");
   JpsiMassWindowBeforeFit_ = iConfig.getParameter<double>("JpsiMassWindowBeforeFit");
@@ -186,7 +187,8 @@ JpsiTrkTrk::JpsiTrkTrk(const edm::ParameterSet& iConfig):
 
   JpsiMassWindowAfterFit_ = iConfig.getParameter<double>("JpsiMassWindowAfterFit");
   JpsiPtCut_ =  iConfig.getParameter<double>("JpsiPtCut");
-  KaonTrackPtCut_ = iConfig.getParameter<double>("KaonTrackPtCut");
+  KaonTrackPtCut_ = iConfig.getParameter<double>("KaonTrackPtCut");//https://arxiv.org/pdf/1307.2782.pdf
+  PionTrackPtCut_ = iConfig.getParameter<double>("PionTrackPtCut");
   BdKaonTrackPtCut_ = iConfig.getParameter<double>("BdKaonTrackPtCut");
   PhiMassWindowBeforeFit_ = iConfig.getParameter<double>("PhiMassWindowBeforeFit");
   PhiMassWindowAfterFit_ = iConfig.getParameter<double>("PhiMassWindowAfterFit");
@@ -241,19 +243,19 @@ void JpsiTrkTrk::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
   TLorentzVector TheBs;
   TLorentzVector TheBd;
  //========================================================Create objects needed for building the B candidate
-  pat::CompositeCandidate BCand_best;
+  pat::CompositeCandidate Bd0Cand_best;
   TrackRef trk1Ref_best;
   TrackRef trk2Ref_best;
   TrackRef trkMu1Ref_best;
   TrackRef trkMu2Ref_best;
-  RefCountedKinematicParticle bs_best;
+  RefCountedKinematicParticle bd0_best;
   pat::Muon mu1_best;
   pat::Muon mu2_best;
  //=========================================================Define Primary vertices(PVs)
   Vertex PVvtxCosTheta;
   Vertex BpPVvtxCosTheta;
   Vertex BdPVvtxCosTheta;
-  int BsPVVtxInd=0;
+  int Bd0PVVtxInd=0;
   vector<TrackRef> BpTrkRefs;
   vector<TrackRef> BsTrkRefs;
   vector<TrackRef> BdTrkRefs;
@@ -273,40 +275,20 @@ void JpsiTrkTrk::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
     //cout<<numInteraction<<"\n";
    }
    //==========================================================Get Primary Vertices
- int    VtxIndex    = -99;
-//====================================================Beam Spot
-  double BSx         = -9999999.;
-  double BSy         = -9999999.;
-  double BSz         = -9999999.;
-  double BSdx        = -9999999.;
-  double BSdy        = -9999999.;
-  double BSdz        = -9999999.;
-  double BSdxdz      = -9999999.;
-  double BSdydz      = -9999999.;
-  double BSsigmaZ    = -9999999.;
-  double BSdsigmaZ   = -9999999.;
-//========================================================PV
-  double PVx         = -9999999.;
-  double PVy         = -9999999.;
-  double PVz         = -9999999.;
-  double PVerrx      = -9999999.;
-  double PVerry      = -9999999.;
-  double PVerrz      = -9999999.;
-   TLorentzVector kaontrack1, kaontrack2;
-//==================================================Handle and assign beam spot parameters
+   //==================================================Handle and assign beam spot parameters
    edm::Handle<reco::BeamSpot> vertexBeamSpot ;
    iEvent.getByToken(vertexBeamSpotTok,vertexBeamSpot);
 
          BSx = vertexBeamSpot->x0(); 
          BSy = vertexBeamSpot->y0();
          BSz = vertexBeamSpot->z0(); 
-         //BSdxdz = vertexBeamSpot->dxdz();
-         //BSdydz = vertexBeamSpot->dydz(); 
+         BSdxdz = vertexBeamSpot->dxdz();
+         BSdydz = vertexBeamSpot->dydz(); 
          
 	 edm::Handle<edm::View<reco::Vertex> > recVtxs;
          iEvent.getByToken(primaryvertexTok, recVtxs);
 
-	 //bRootTree_->NVertices_ = recVtxs->size();
+	 bRootTree_->NVertices_ = recVtxs->size();
 	 for(size_t iVtx = 0; iVtx < recVtxs->size(); ++ iVtx)
  {
            VtxIndex = iVtx;
@@ -460,15 +442,16 @@ void JpsiTrkTrk::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
                    if(bRootTree_->iPassedCutIdent_   < 2 )   bRootTree_->iPassedCutIdent_   = 2 ;
                    if(bRootTree_->iPassedCutIdentBd_   < 2 ) bRootTree_->iPassedCutIdentBd_ = 2 ;
 
-                  edm::ESHandle<TransientTrackBuilder> theB;
-                  iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",theB);
+                  //edm::ESHandle<TransientTrackBuilder> theB;
+                  //iSetup.get<TransientTrackRecord>().get("TransientTrackBuilder",theB);
+		  const auto& trackBuilder = iSetup.getData(trackBuilderToken);
                   TrackRef trkMu1Ref = mu1.get<TrackRef>();
                   TrackRef trkMu2Ref = mu2.get<TrackRef>();
                   TrackRef muonTrkP = mu1.track();
                   TrackRef muonTrkM = mu2.track();
                   vector<TransientTrack> trk_all;
-                  TransientTrack mu1TT=(*theB).build(&trkMu1Ref);
-                  TransientTrack mu2TT=(*theB).build(&trkMu2Ref);
+                  TransientTrack mu1TT=trackBuilder.build(*trkMu1Ref);
+                  TransientTrack mu2TT=trackBuilder.build(*trkMu2Ref);
                   trk_all.push_back(mu1TT);
                   trk_all.push_back(mu2TT);
                   KalmanVertexFitter kvf(true);
@@ -485,7 +468,7 @@ void JpsiTrkTrk::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
                  // vertex validity
                  if(bRootTree_->iPassedCutIdent_   < 3 )   bRootTree_->iPassedCutIdent_   = 3 ;     
                  if(bRootTree_->iPassedCutIdentBd_   < 3 ) bRootTree_->iPassedCutIdentBd_ = 3 ;
-		 int isCowboy=0;
+		 
                  if (mu1.charge()==1) {
                  float mupPhi = atan(mu1.py()/mu1.px());
                  if ( mu1.px() < 0 && mu1.py() < 0 ) mupPhi -= TMath::Pi();
@@ -517,7 +500,6 @@ void JpsiTrkTrk::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
                 reco::Vertex::Point vperp(displacementFromBeamspot.x(),displacementFromBeamspot.y(),0.);
                 double CosAlpha = vperp.Dot(pperp)/(vperp.R()*pperp.R());
                 //std::cout<<"opening angle: "<<CosAlpha<<"\n";
-                double MuonsDCA=999;
                  TrajectoryStateClosestToPoint mu1TS = mu1TT.impactPointTSCP();
                  TrajectoryStateClosestToPoint mu2TS = mu2TT.impactPointTSCP();
                  if (mu1TS.isValid() && mu2TS.isValid()) {
@@ -537,8 +519,245 @@ void JpsiTrkTrk::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup
                 GlobalError err(verr.At(0,0), verr.At(1,0), verr.At(1,1), verr.At(2,0), verr.At(2,1), verr.At(2,2) );
                 float lxy = displacementFromBeamspot.perp();
                 float lxyerr = sqrt(err.rerr(displacementFromBeamspot));
-                std::cout<<"LXYerror: "<<lxyerr<<"\t"<<"LXY: "<<lxy<<"\n";
+                //std::cout<<"LXYerror: "<<lxyerr<<"\t"<<"LXY: "<<lxy<<"\n";
                 //Requires a filter match : bRootTree_->JpsiNumberOfCandidates_++;
+
+		bRootTree_->JpsiM_alone_ = Jpsi.mass();
+		bRootTree_->JpsiPhi_alone_ = Jpsi.phi();
+                bRootTree_->JpsiEta_alone_ = Jpsi.eta();
+                bRootTree_->JpsiPt_alone_ = Jpsi.pt();
+                if( mu1.charge() == -1 )
+       { 
+
+                      bRootTree_->Mu1Pt_beffit_   = mu1.pt();
+                      bRootTree_->Mu1Pz_beffit_   = mu1.pz();
+                      bRootTree_->Mu1Eta_beffit_  = mu1.eta();
+                      bRootTree_->Mu1Phi_beffit_  = mu1.phi();
+                     // std::cout<<"mu1phi:"<<mu1.phi();
+                      bRootTree_->Mu2Phi_beffit_  = mu2.phi();
+                      bRootTree_->Mu2Pt_beffit_  = mu2.pt();
+                      bRootTree_->Mu2Pz_beffit_   = mu2.pz();
+                      bRootTree_->Mu2Eta_beffit_  = mu2.eta();
+       }
+
+      else 
+      {
+                            bRootTree_->Mu2Pt_beffit_   = mu1.pt();
+                            bRootTree_->Mu2Pz_beffit_   = mu1.pz();
+                            bRootTree_->Mu2Eta_beffit_  = mu1.eta();
+                            bRootTree_->Mu2Phi_beffit_  = mu1.phi();
+                            //std::cout<<"mu1phi"<<mu1.phi();
+                            bRootTree_->Mu1Phi_beffit_  = mu2.phi();
+                            bRootTree_->Mu1Pt_beffit_  = mu2.pt();
+                            bRootTree_->Mu1Pz_beffit_   = mu2.pz();
+                            bRootTree_->Mu1Eta_beffit_  = mu2.eta();
+                     
+      }
+
+                bRootTree_->JpsiMuMuDCA_beffit_  = MuonsDCA;
+ 		bRootTree_->JpsiCosDeltaAlpha_  = CosAlpha;
+                // std::cout<<"cosalpha"<<CosAlpha<<"\n";
+ 		bRootTree_->JpsiLxySigma_   = lxyerr;
+		bRootTree_->JpsiLxy_  = lxy;
+		bRootTree_->JpsiLxyOverPt_ =	( displacementFromBeamspot.x() * Jpsi.px() + 	displacementFromBeamspot.y() * Jpsi.py() ) /	( Jpsi.pt()* Jpsi.pt()) ;
+                //std::cout<<"jpsilxyoverpt: "<<( displacementFromBeamspot.x() * Jpsi.px() +    displacementFromBeamspot.y() * Jpsi.py() ) /    ( Jpsi.pt()* Jpsi.pt())<<"\n";
+                if( tv.isValid() )
+                {
+	          	 bRootTree_->JpsiTrigVtxProb_  =  vtxProb_Jpsi;
+                        // std::cout<<"prob:"<<vtxProb_Jpsi;
+		}
+   
+		
+		if (mu1.isTrackerMuon() && !mu1.isGlobalMuon())bRootTree_->JpsiMuon1Cat_alone_ = 1;
+                else if (!mu1.isTrackerMuon() && mu1.isGlobalMuon())bRootTree_->JpsiMuon1Cat_alone_ = 2;
+                else if (mu1.isTrackerMuon() && mu1.isGlobalMuon())bRootTree_->JpsiMuon1Cat_alone_ = 3;
+                else if (!mu1.isTrackerMuon() && !mu1.isGlobalMuon())bRootTree_->JpsiMuon1Cat_alone_ = 4;
+                if (mu1.isPFMuon())       bRootTree_->JpsiMuonCat1_ = 1;
+
+                if (mu2.isTrackerMuon() && !mu2.isGlobalMuon())       bRootTree_->JpsiMuon2Cat_alone_ = 1;
+                else if (!mu2.isTrackerMuon() && mu2.isGlobalMuon())  bRootTree_->JpsiMuon2Cat_alone_ = 2;
+                else if (mu2.isTrackerMuon() && mu2.isGlobalMuon())   bRootTree_->JpsiMuon2Cat_alone_ = 3;
+                else if (!mu2.isTrackerMuon() && !mu2.isGlobalMuon()) bRootTree_->JpsiMuon2Cat_alone_ = 4;
+                if (mu2.isPFMuon())       bRootTree_->JpsiMuonCat2_ = 1;
+
+		int pixhits1 = 0;
+                const reco::HitPattern& pp1 = trkMu1Ref.get()->hitPattern();
+                for (int iter=0; iter<pp1.numberOfAllHits(reco::HitPattern::TRACK_HITS); iter++) {
+			uint32_t hit = pp1.getHitPattern(reco::HitPattern::TRACK_HITS,iter);
+			if (pp1.validHitFilter(hit) && pp1.pixelBarrelHitFilter(hit)) pixhits1++;
+			if (pp1.validHitFilter(hit) && pp1.pixelEndcapHitFilter(hit)) pixhits1++;
+                  }
+                bRootTree_->JpsiMu1nPixHits_alone_   = pixhits1;
+
+                int pixhits2 = 0;
+                const reco::HitPattern& pp2 = trkMu2Ref.get()->hitPattern();
+                for (int iter=0; iter<pp2.numberOfAllHits(reco::HitPattern::TRACK_HITS); iter++)
+                 {
+			uint32_t hit = pp2.getHitPattern(reco::HitPattern::TRACK_HITS,iter);
+                        //std::cout<<"hits"<<hit<<"\n";
+			if (pp2.validHitFilter(hit) && pp2.pixelBarrelHitFilter(hit)) pixhits2++;
+			if (pp2.validHitFilter(hit) && pp2.pixelEndcapHitFilter(hit)) pixhits2++;
+                 }
+
+                bRootTree_->JpsiMu2nPixHits_alone_   = pixhits2;
+
+		edm::Handle<View<pat::PackedCandidate>> allTracks;
+                iEvent.getByToken(trackLabelK, allTracks);
+		 for (size_t k=0; k< allTracks->size(); ++k)
+                  {
+                           const pat::PackedCandidate & track1 = (*allTracks)[k];
+                             if (!track1.hasTrackDetails())continue;
+
+                             if (track1.charge()<0)continue;
+                             if (track1.pt() < KaonTrackPtCut_) continue;
+                             if (track1.numberOfHits() < 5)continue;
+                             if(!track1.trackHighPurity()) continue;
+			     DeltaRKaonJpsi = deltaR(Jpsi.eta(), Jpsi.phi(), track1.eta(), track1.phi());
+                             if (DeltaRKaonJpsi > 2.2) continue;
+                             const reco::Track &  rtrk1 = (*allTracks)[k].pseudoTrack();
+                             if (rtrk1.charge()<0) continue;
+                             TransientTrack KPTT = trackBuilder.build(&rtrk1);
+                             TrajectoryStateClosestToPoint KPTS = KPTT.impactPointTSCP();
+                             if(!KPTS.isValid())continue;
+                             if (!track1.clone()->hasTrackDetails())continue;
+                             pat::PackedCandidate *track11 = track1.clone();
+
+
+			     for (size_t l=k+1; l< allTracks->size(); ++l)
+                           { 
+		             const pat::PackedCandidate & track2 = (*allTracks)[l];
+	                     if ( !track2.hasTrackDetails() )continue;
+                             if (track2.charge()>0) continue;
+                             if (track2.pt() < PionTrackPtCut_) continue;
+                             if ( track2.numberOfHits()<5) continue;
+                             if(!track2.trackHighPurity()) continue;
+			     DeltaRPionJpsi = deltaR(Jpsi.eta(), Jpsi.phi(), track2.eta(), track2.phi());
+			     if (DeltaRPionJpsi >2.2) continue;
+                             const reco::Track &  rtrk2 = (*allTracks)[l].pseudoTrack();
+                             if (rtrk2.charge()>0) continue;
+                             TransientTrack PiMTT = trackBuilder.build(&rtrk2);
+                             TrajectoryStateClosestToPoint PiMTS = PiMTT.impactPointTSCP();
+                             if(!PiMTS.isValid())continue;
+			     if (KPTS.isValid() && PiMTS.isValid()) {
+				     ClosestApproachInRPhi cAppK;
+                                     cAppK.calculate(KPTS.theState(), PiMTS.theState());
+                                     KPiDCA=cAppK.distance();
+			     }
+			     if(KPiDCA > 0.5)continue;
+			     if (!track2.clone()->hasTrackDetails())continue;
+                             pat::PackedCandidate *track22 = track2.clone();
+                             //bRootTree_->KaonsDCA_   = KaonsDCA;
+                             if(bRootTree_->iPassedCutIdent_ < 4 ) bRootTree_->iPassedCutIdent_ = 4 ;
+                             pat::CompositeCandidate KStarCand;
+			     track11->setMass(kaonmass);
+                             KStarCand.addDaughter(*track11);
+			     track22->setMass(pionmass);
+                             KStarCand.addDaughter(*track22);
+			     AddFourMomenta ad;
+                             ad.set(KStarCand);
+			     if (abs(KStarCand.mass()- nominalKstarMass) > KstarMassWindowBeforeFit_) continue;
+                             if(bRootTree_->iPassedCutIdent_   < 5 ) bRootTree_->iPassedCutIdent_ = 5 ;
+                             pat::CompositeCandidate Bd0Cand;
+       	  		       Bd0Cand.addDaughter(mu1);
+       	  		       Bd0Cand.addDaughter(mu2);
+       	  	               Bd0Cand.addDaughter(*track11);
+       	  		       Bd0Cand.addDaughter(*track22);
+       	  		       AddFourMomenta add4mom;
+       	  		       add4mom.set(Bd0Cand);
+                               //std::cout<<"mass Bd0 : "<<BCand.mass()<<"\n";
+       	  		       if (Bd0Cand.mass() < BdLowerMassCutBeforeFit_ || Bd0Cand.mass() > BdUpperMassCutBeforeFit_) continue;
+                               if(bRootTree_->iPassedCutIdent_   < 8 ) bRootTree_->iPassedCutIdent_ = 8 ;
+
+
+			      vector<TransientTrack> t_tracks;
+       	  	              t_tracks.push_back(trackBuilder.build(*trkMu1Ref));
+       	  		      t_tracks.push_back(trackBuilder.build(*trkMu2Ref));
+       	  		      t_tracks.push_back(trackBuilder.build(&rtrk1));
+       	  		      t_tracks.push_back(trackBuilder.build(&rtrk2));
+			      if (!trkMu1Ref.isNonnull() || !trkMu2Ref.isNonnull() )continue;
+			      if(bRootTree_->iPassedCutIdent_   < 9 ) bRootTree_->iPassedCutIdent_ = 9 ;
+			       vector<TransientTrack> kstar_tracks;
+                               kstar_tracks.push_back(trackBuilder.build(&rtrk1));//trk1Ref
+                               kstar_tracks.push_back(trackBuilder.build(&rtrk2));//trk2Ref
+                               KalmanVertexFitter kvfkstar;
+                               TransientVertex tvkstar = kvfkstar.vertex(kstar_tracks);
+                               if (!tvkstar.isValid()) continue;
+			       Vertex vertexkstar = tvkstar;
+                               double vtxProb_Kstar = TMath::Prob(vertexkstar.chi2(),(int)vertexkstar.ndof());
+
+			       KalmanVertexFitter kvfbs;
+                               TransientVertex kvfbd0vertex = kvfbs.vertex(t_tracks);
+                               Vertex vertexbd0kalman = kvfbd0vertex;
+                               if (!kvfbd0vertex.isValid()) continue;
+                               GlobalError gigi=kvfbd0vertex.positionError();
+			       bRootTree_->K1Pt_beffit_   = track1.pt();
+	 	 	       bRootTree_->K1Pz_beffit_   = track1.pz();
+	  	         	bRootTree_->K1Eta_beffit_  = track1.eta();
+	  		        bRootTree_->K1Phi_beffit_  = track1.phi();
+	 	 		bRootTree_->PiPt_beffit_   = track2.pt();
+	  			bRootTree_->PiPz_beffit_   = track2.pz();
+	  			bRootTree_->PiEta_beffit_  = track2.eta();
+	  			bRootTree_->PiPhi_beffit_  = track2.phi();
+				KinematicFitInterface Kfitter;
+				bool fitSuccess = Kfitter.doFit(t_tracks, nominalMuonMass,  nominalKaonMass, nominalPionMass);//Actual Fit for BD candidate vertex
+                                if(fitSuccess != 1) continue;
+				if(bRootTree_->iPassedCutIdent_   < 10 ) bRootTree_->iPassedCutIdent_ = 10 ;
+                                double vtxprob_Bd0 = TMath::Prob(vertexbd0kalman.chi2(),(int)vertexbd0kalman.ndof());
+				RefCountedKinematicParticle bd0 = Kfitter.getParticle();
+	  		        RefCountedKinematicVertex bVertex = Kfitter.getVertex();
+	  		        AlgebraicVector7 b_par = bd0->currentState().kinematicParameters().vector();
+	  		        //AlgebraicSymMatrix77 bd0_er = bd0->currentState().kinematicParametersError().matrix();
+                                AlgebraicMatrix33 BVError(bVertex->error().matrix());
+	  		        double fittedBd0Mass = b_par[6];
+				if(!bVertex->vertexIsValid()) continue;
+				TMatrix cova(2,2);
+                                cova.IsSymmetric();
+                                cova(0,0)=gigi.cxx();
+                                cova(1,1)=gigi.cyy();
+                                cova(0,1)=gigi.cyx();
+                                cova(1,0)=gigi.cyx();
+				if(abs(Jpsi.mass() - nominalJpsiMass) < JpsiMassWindowAfterFit_  
+				&& Jpsi.pt() > JpsiPtCut_   
+				&& abs(KStarCand.mass()- nominalKstarMass) > KstarMassWindowBeforeFit_    
+				&&  fittedBd0Mass > BdLowerMassCutAfterFit_  
+				&&  fittedBd0Mass < BdUpperMassCutAfterFit_ ){
+                                bRootTree_->Bd0NumberOfCandidatesAfterFit_++;
+				}
+				if(vtxprob_Bd0 > minVtxP)
+                               {
+				       reco::Track trk1Ref_best = rtrk1;//trk1Ref;
+                              reco::Track trk2Ref_best = rtrk2;//trk2Ref;
+                              trkMu1Ref_best=trkMu1Ref;
+                              trkMu2Ref_best=trkMu2Ref;
+                              mu1_best=mu1;
+                              mu2_best=mu2;
+
+
+
+                               TrackRef mu1trkref = mu1.get<TrackRef>();
+                               TrackRef mu2trkref = mu2.get<TrackRef>();
+                               TrackRef K1trkRef = track1.get<TrackRef>();
+                               TrackRef PitrkRef = track2.get<TrackRef>();
+			       BdTrkRefs.clear();
+                               BdTrkRefs.push_back(mu1trkref);
+                               BdTrkRefs.push_back(mu2trkref);
+                               BdTrkRefs.push_back(K1trkRef);
+                               BdTrkRefs.push_back(PitrkRef);
+
+		               if (abs(Jpsi.mass() - nominalJpsiMass) > JpsiMassWindowAfterFit_ || Jpsi.pt() < JpsiPtCut_) continue;
+                               if (abs(KStarCand.mass()- nominalKstarMass) > KstarMassWindowBeforeFit_)continue;
+		               if (fittedBd0Mass < BdLowerMassCutAfterFit_ || fittedBd0Mass > BdUpperMassCutAfterFit_) continue;		
+			       minVtxP = vtxprob_Bd0;
+                               Bd0Cand_best = Bd0Cand;
+			       GlobalVector Bd0vec(b_par[3], b_par[4], b_par[5]); // the fitted momentum vector of the Bs
+			       bRootTree_->Bd0FitM_ = fittedBd0Mass;
+                               bRootTree_->Bd0FitEta_ = Bd0vec.eta();
+                               bRootTree_->Bd0FitPt_  = Bd0vec.perp();
+                               bRootTree_->Bd0FitPz_  = Bd0vec.z();
+                               bRootTree_->Bd0FitPhi_ = Bd0vec.phi();
+			       }
+			   }
+		  }
 
 			}}	      
               bRootTree_->fill();

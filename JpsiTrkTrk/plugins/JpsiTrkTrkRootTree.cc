@@ -69,7 +69,31 @@ void JpsiTrkTrkRootTree::createTree(const std::string filename)
   bTree_->Branch(  "JpsiLxySigma"         , &JpsiLxySigma_, "JpsiLxySigma/D");
   bTree_->Branch(  "JpsiLxy"         , &JpsiLxy_, "JpsiLxy/D");
   bTree_->Branch(  "JpsiLxyOverPt"         , &JpsiLxyOverPt_, "JpsiLxyOverPt/D");
-  
+  bTree_->Branch(  "JpsiTrigVtxProb"         , &JpsiTrigVtxProb_,"JpsiTrigVtxProb/D"); 
+  bTree_->Branch(  "JpsiMuon1Cat_alone"		  , &JpsiMuon1Cat_alone_,               "JpsiMuon1Cat_alone/I");
+  bTree_->Branch(  "JpsiMuon2Cat_alone"		  , &JpsiMuon2Cat_alone_,               "JpsiMuon2Cat_alone/I");
+  bTree_->Branch(  "BdJpsiMuon1Cat_alone"		  , &BdJpsiMuon1Cat_alone_,               "BdJpsiMuon1Cat_alone/I");
+  bTree_->Branch(  "BdJpsiMuon2Cat_alone"		  , &BdJpsiMuon2Cat_alone_,               "BdJpsiMuon2Cat_alone/I");
+  bTree_->Branch(  "JpsiMuonCat1"		  , &JpsiMuonCat1_ , "JpsiMuonCat1/I"  );
+  bTree_->Branch(  "JpsiMuonCat2"		  , &JpsiMuonCat2_ , "JpsiMuonCat2/I"  ); 
+  bTree_->Branch(  "JpsiMu1nPixHits_alone"         , &JpsiMu1nPixHits_alone_,               "JpsiMu1nPixHits_alone/I");
+  bTree_->Branch(  "JpsiMu2nPixHits_alone"         , &JpsiMu2nPixHits_alone_,               "JpsiMu2nPixHits_alone/I");
+
+  bTree_->Branch(  "K1Pt_beffit"			  , &K1Pt_beffit_,                       "K1Pt_beffit/D");
+  bTree_->Branch(  "K1Pz_beffit"			  , &K1Pz_beffit_,                       "K1Pz_beffit/D");
+  bTree_->Branch(  "K1Eta_beffit"			  , &K1Eta_beffit_,                      "K1Eta_beffit/D");
+  bTree_->Branch(  "K1Phi_beffit"			  , &K1Phi_beffit_,                      "K1Phi_beffit/D");
+
+  bTree_->Branch(  "PiPt_beffit"			  , &PiPt_beffit_,                       "PiPt_beffit/D");
+  bTree_->Branch(  "PiPz_beffit"			  , &PiPz_beffit_,                       "PiPz_beffit/D");
+  bTree_->Branch(  "PiEta_beffit"			  , &PiEta_beffit_,                      "PiEta_beffit/D");
+  bTree_->Branch(  "PiPhi_beffit"			  , &PiPhi_beffit_,                      "PiPhi_beffit/D");
+  bTree_->Branch(  "Bd0NumberOfCandidatesAfterFit"          , &Bd0NumberOfCandidatesAfterFit_,            "Bd0NumberOfCandidatesAfterFit/I");
+  bTree_->Branch(  "Bd0FitM"			  , &Bd0FitM_,                           "Bd0FitM/D");
+  bTree_->Branch(  "Bd0FitEta"			  , &Bd0FitEta_,                         "Bd0FitEta/D");
+  bTree_->Branch(  "Bd0FitPt"			  , &Bd0FitPt_,                          "Bd0FitPt/D");
+  bTree_->Branch(  "Bd0FitPz"			  , &Bd0FitPz_,                          "Bd0FitPz/D");
+  bTree_->Branch(  "Bd0FitPhi"			  , &Bd0FitPhi_,                         "Bd0FitPhi/D");
 }
 
 JpsiTrkTrkRootTree::~JpsiTrkTrkRootTree()
@@ -129,6 +153,29 @@ void JpsiTrkTrkRootTree::resetEntries()
         JpsiLxySigma_ = -9999999;
         JpsiLxy_ = -9999999;
 	JpsiLxyOverPt_= -9999999;
+        JpsiTrigVtxProb_ = -9999999;
+	JpsiMuonCat1_ = -9999999;
+        JpsiMuonCat2_ = -9999999;
+        JpsiMuon1Cat_alone_ = -9999999;
+        JpsiMuon2Cat_alone_ = -9999999;
+        BdJpsiMuon1Cat_alone_ = -9999999;
+        BdJpsiMuon2Cat_alone_ = -9999999;
+ 	JpsiMu1nPixHits_alone_ = -9999999;
+        JpsiMu2nPixHits_alone_ = -9999999;
+        K1Pt_beffit_ = -9999999;
+        K1Pz_beffit_ = -9999999;
+        K1Eta_beffit_ = -9999999;
+        K1Phi_beffit_ = -9999999;
+        PiPt_beffit_ = -9999999;
+        PiPz_beffit_ = -9999999;
+        PiEta_beffit_ = -9999999;
+        PiPhi_beffit_ = -9999999;
+        Bd0NumberOfCandidatesAfterFit_ =  0;
+        Bd0FitM_ = -9999999;
+	Bd0FitEta_ = -9999999;
+        Bd0FitPt_ = -9999999;
+        Bd0FitPz_ = -9999999;
+        Bd0FitPhi_ = -9999999;
 
 }
 void JpsiTrkTrkRootTree::getDeDx(const double f1, const double f2, const int f3)
@@ -226,7 +273,30 @@ void JpsiTrkTrkRootTree::setBranchAddresses(){
   bTree_->SetBranchAddress(  "JpsiLxySigma"         , &JpsiLxySigma_);
   bTree_->SetBranchAddress(  "JpsiLxy"         , &JpsiLxy_);
   bTree_->SetBranchAddress(  "JpsiLxyOverPt"         , &JpsiLxyOverPt_);
-  bTree_->SetBranchAddress("MuonMultiplicity",&MuonMultiplicity_);
+  bTree_->SetBranchAddress(  "MuonMultiplicity",&MuonMultiplicity_);
+  bTree_->SetBranchAddress(  "JpsiTrigVtxProb"         , &JpsiTrigVtxProb_); 
+  bTree_->SetBranchAddress(  "JpsiMuon1Cat_alone"		  , &JpsiMuon1Cat_alone_  );
+  bTree_->SetBranchAddress(  "JpsiMuon2Cat_alone"		  , &JpsiMuon2Cat_alone_  );
+  bTree_->SetBranchAddress(  "BdJpsiMuon1Cat_alone"		  , &BdJpsiMuon1Cat_alone_  );
+  bTree_->SetBranchAddress(  "BdJpsiMuon2Cat_alone"		  , &BdJpsiMuon2Cat_alone_  ); 
+  bTree_->SetBranchAddress(  "JpsiMuonCat1"		  , &JpsiMuonCat1_  );
+  bTree_->SetBranchAddress(  "JpsiMuonCat2"		  , &JpsiMuonCat2_  );
+  bTree_->SetBranchAddress(  "JpsiMu1nPixHits_alone"               , &JpsiMu1nPixHits_alone_  );
+  bTree_->SetBranchAddress(  "JpsiMu2nPixHits_alone"               , &JpsiMu2nPixHits_alone_  );
+  bTree_->SetBranchAddress(  "K1Pt_beffit"			  , &K1Pt_beffit_  );
+  bTree_->SetBranchAddress(  "K1Pz_beffit"			  , &K1Pz_beffit_  );
+  bTree_->SetBranchAddress(  "K1Eta_beffit"			  , &K1Eta_beffit_  );
+  bTree_->SetBranchAddress(  "K1Phi_beffit"			  , &K1Phi_beffit_  );
+  bTree_->SetBranchAddress(  "PiPt_beffit"			  , &PiPt_beffit_  );
+  bTree_->SetBranchAddress(  "PiPz_beffit"			  , &PiPz_beffit_  );
+  bTree_->SetBranchAddress(  "PiEta_beffit"			  , &PiEta_beffit_  );
+  bTree_->SetBranchAddress(  "PiPhi_beffit"			  , &PiPhi_beffit_  );
+  bTree_->SetBranchAddress(  "Bd0NumberOfCandidatesAfterFit"        , &Bd0NumberOfCandidatesAfterFit_);
+  bTree_->SetBranchAddress(  "Bd0FitM"			  , &Bd0FitM_  );
+  bTree_->SetBranchAddress(  "Bd0FitEta"			  , &Bd0FitEta_  );
+  bTree_->SetBranchAddress(  "Bd0FitPt"			  , &Bd0FitPt_  );
+  bTree_->SetBranchAddress(  "Bd0FitPz"			  , &Bd0FitPz_  );
+  bTree_->SetBranchAddress(  "Bd0FitPhi"			  , &Bd0FitPhi_  );
 }
 
 

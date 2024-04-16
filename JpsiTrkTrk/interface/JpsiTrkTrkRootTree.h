@@ -81,11 +81,37 @@ class JpsiTrkTrkRootTree{
   double Mu2Pz_beffit_;
   double Mu2Eta_beffit_;
   double Mu2Phi_beffit_;
-  int JpsiMuMuDCA_beffit_;
+  int    JpsiMuMuDCA_beffit_;
   double JpsiCosDeltaAlpha_;
   double JpsiLxySigma_;
   double JpsiLxy_;
   double JpsiLxyOverPt_;
+  double JpsiTrigVtxProb_;
+  int    JpsiMuonCat1_;
+  int    JpsiMuonCat2_;
+  int    JpsiMuon1Cat_alone_;
+  int    JpsiMuon2Cat_alone_;
+  int    BdJpsiMuon1Cat_alone_;
+  int    BdJpsiMuon2Cat_alone_;
+  int    JpsiMu1nPixHits_alone_;
+  int    JpsiMu2nPixHits_alone_;
+
+  double K1Pt_beffit_;
+  double K1Pz_beffit_;
+  double K1Eta_beffit_;
+  double K1Phi_beffit_;
+  double PiPt_beffit_;
+  double PiPz_beffit_;
+  double PiEta_beffit_;
+  double PiPhi_beffit_;
+  int    Bd0NumberOfCandidatesAfterFit_;
+  double Bd0FitM_;
+  double Bd0FitEta_;
+  double Bd0FitPt_;
+  double Bd0FitPz_;
+  double Bd0FitPhi_;
+
+
 
 };
 #endif
